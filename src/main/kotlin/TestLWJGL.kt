@@ -7,10 +7,15 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
+import kotlin.math.cos
+import kotlin.math.sin
 
 class HelloWorld {
     // The window handle
     private var window: Long = 0
+    private var windowWidth:Int = 300
+    private var windowHeight:Int = 300
+
     fun run() {
         println("Hello LWJGL " + Version.getVersion() + "!")
         init()
@@ -39,7 +44,7 @@ class HelloWorld {
         GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GLFW.GLFW_TRUE) // the window will be resizable
 
         // Create the window
-        window = GLFW.glfwCreateWindow(300, 300, "Hello World!", MemoryUtil.NULL, MemoryUtil.NULL)
+        window = GLFW.glfwCreateWindow(windowWidth, windowHeight, "Hello World!", MemoryUtil.NULL, MemoryUtil.NULL)
         if (window == MemoryUtil.NULL) throw RuntimeException("Failed to create the GLFW window")
 
         // Setup a key callback. It will be called every time a key is pressed, repeated or released.
@@ -89,31 +94,104 @@ class HelloWorld {
         // Set the clear color
         GL11.glClearColor(1.0f, 0.0f, 0.0f, 0.0f)
 
-        // Run the rendering loop until the user has attempted to close
-        // the window or has pressed the ESCAPE key.
-        while (!GLFW.glfwWindowShouldClose(window)) {
-            GL11.glClear(GL11.GL_COLOR_BUFFER_BIT or GL11.GL_DEPTH_BUFFER_BIT) // clear the framebuffer
 
+
+        while (!GLFW.glfwWindowShouldClose(window)) {
+            glClear(GL11.GL_COLOR_BUFFER_BIT or GL11.GL_DEPTH_BUFFER_BIT)
 
             glColor3d(.0,1.0,.0)
-            glBegin(GL_LINES)
-            glVertex2f(0f, 0f)
-            glVertex2f(1f, 1f)
-            glEnd()
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+            glLineWidth(5f)
 
-
-            GLFW.glfwSwapBuffers(window) // swap the color buffers
-
-            // Poll for window events. The key callback above will only be
-            // invoked during this call.
+            drawContent()
+            GLFW.glfwSwapBuffers(window)
             GLFW.glfwPollEvents()
         }
     }
 
-    companion object {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            HelloWorld().run()
-        }
+    fun drawContent()
+    {
+        drawRectangle(Point(10,10),Point(100,100))
+        drawCircle(Point(150,150),50)
     }
+
+    fun drawCircle(center:Point,radius:Int)
+    {
+        val pointsList = (0..3600).map {
+
+            val x = center.x + radius * cos(Math.toRadians(it/10.0))
+            val y = center.y + radius * sin(Math.toRadians(it/10.0))
+
+            Point(x.toInt(),y.toInt())
+        }
+
+        drawPolygon(pointsList)
+    }
+
+    fun drawRectangle(lb:Point,tr:Point)
+    {
+        drawPolygon(
+            lb,
+            Point(lb.x,tr.y),
+            tr,
+            Point(tr.x,lb.y),
+            lb
+        )
+    }
+
+    fun drawPolygon(vararg points:Point)
+    {
+        glBegin(GL_POLYGON)
+
+        points.forEach {
+            glVertex2f(convertPointXToOpenGLX(it.x) , convertPointYToOpenGLY(it.y))
+        }
+
+        glEnd()
+    }
+
+    fun drawPolygon( points:List<Point>)
+    {
+        glBegin(GL_POLYGON)
+
+        points.forEach {
+            glVertex2f(convertPointXToOpenGLX(it.x) , convertPointYToOpenGLY(it.y))
+        }
+
+        glEnd()
+    }
+
+
+    fun drawLine(vararg points:Point)
+    {
+        glBegin(GL_LINE_STRIP)
+
+        points.forEach {
+            glVertex2f(convertPointXToOpenGLX(it.x) , convertPointYToOpenGLY(it.y))
+        }
+
+        glEnd()
+    }
+
+    fun drawLine(p1:Point,p2:Point)
+    {
+        glBegin(GL_LINE_STRIP)
+
+        glVertex2f(convertPointXToOpenGLX(p1.x) , convertPointYToOpenGLY(p1.y))
+        glVertex2f(convertPointXToOpenGLX(p2.x) , convertPointYToOpenGLY(p2.y))
+
+        glEnd()
+    }
+
+    fun convertPointXToOpenGLX(x:Int) = 2f*(x.toFloat()/windowWidth) - 1
+    fun convertPointYToOpenGLY(y:Int) = 2f*(y.toFloat()/windowHeight) - 1
+}
+
+
+class Point(val x:Int,val y:Int)
+
+
+
+fun main(args: Array<String>) {
+    HelloWorld().run()
 }
