@@ -1,3 +1,4 @@
+import org.jetbrains.skija.*
 import org.lwjgl.Version
 import org.lwjgl.glfw.Callbacks
 import org.lwjgl.glfw.GLFW
@@ -7,8 +8,10 @@ import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.system.MemoryStack
 import org.lwjgl.system.MemoryUtil
+import java.io.File
 import kotlin.math.cos
 import kotlin.math.sin
+
 
 class HelloWorld {
     // The window handle
@@ -91,6 +94,34 @@ class HelloWorld {
         // bindings available for use.
         GL.createCapabilities()
 
+        val context = DirectContext.makeGL()
+        val fbId = glGetInteger(0x8CA6) // GL_FRAMEBUFFER_BINDING
+
+        val renderTarget = BackendRenderTarget.makeGL(
+            windowWidth,
+            windowHeight,  /*samples*/
+            0,  /*stencil*/
+            8,
+            fbId,
+            FramebufferFormat.GR_GL_RGBA8
+        )
+
+        val surface: Surface = Surface.makeFromBackendRenderTarget(
+            context,
+            renderTarget,
+            SurfaceOrigin.BOTTOM_LEFT,
+            SurfaceColorFormat.RGBA_8888,
+            ColorSpace.getSRGB()
+        )
+
+        val canvas = surface.canvas
+
+        val paint = Paint()
+        paint.color = 0x7f00ff00
+
+        val face = FontMgr.getDefault().matchFamilyStyle("Menlo", FontStyle.NORMAL)
+        val font = Font(face, 30f)
+
         // Set the clear color
         GL11.glClearColor(1.0f, 0.0f, 0.0f, 0.0f)
 
@@ -99,11 +130,12 @@ class HelloWorld {
         while (!GLFW.glfwWindowShouldClose(window)) {
             glClear(GL11.GL_COLOR_BUFFER_BIT or GL11.GL_DEPTH_BUFFER_BIT)
 
-            glColor3d(.0,1.0,.0)
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            glLineWidth(5f)
+          //  canvas.drawCircle(100f,100f,100f,paint)
 
-            drawContent()
+            canvas.drawImage(Image.makeFromEncoded(File("/home/masoudy/Pictures/Wallpapers/pic.jpg").readBytes()),0f,0f)
+            canvas.drawString("Hello There!" , 100f,100f,font,paint)
+
+            context.flush()
             GLFW.glfwSwapBuffers(window)
             GLFW.glfwPollEvents()
         }
@@ -111,8 +143,10 @@ class HelloWorld {
 
     fun drawContent()
     {
-        drawRectangle(Point(10,10),Point(100,100))
-        drawCircle(Point(150,150),50)
+     //   drawRectangle(Point(10,10),Point(100,100))
+     //   drawCircle(Point(150,150),50)
+
+        drawText("AA AA A",100,100,100)
     }
 
     fun drawCircle(center:Point,radius:Int)
@@ -126,6 +160,34 @@ class HelloWorld {
         }
 
         drawPolygon(pointsList)
+    }
+
+    fun drawText(text:String , baseLineX:Int,baseLineY:Int , fontSize:Int)
+    {
+
+        val glyphWidth = fontSize / 2
+        val spaceBetweenGlyphs = fontSize / 10
+        var xSoFar = baseLineX
+
+        text.forEach {
+
+            when(it)
+            {
+                'A' -> drawLine(
+                    Point(xSoFar,baseLineY),
+                    Point(xSoFar,baseLineY+fontSize),
+                    Point(xSoFar + glyphWidth,baseLineY+fontSize),
+                    Point(xSoFar + glyphWidth,baseLineY+glyphWidth),
+                    Point(xSoFar ,baseLineY+glyphWidth),
+                    Point(xSoFar + glyphWidth,baseLineY+glyphWidth),
+                    Point(xSoFar + glyphWidth,baseLineY),
+                )
+
+                ' ' -> xSoFar += glyphWidth + spaceBetweenGlyphs
+            }
+
+            xSoFar += glyphWidth + spaceBetweenGlyphs
+        }
     }
 
     fun drawRectangle(lb:Point,tr:Point)

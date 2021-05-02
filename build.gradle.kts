@@ -6,12 +6,18 @@ plugins {
 
 repositories{
 	mavenCentral()
+
+    maven {
+        setUrl("https://packages.jetbrains.team/maven/p/skija/maven")
+    }
 }
 
 val lwjglVersion = "3.2.3"
 val lwjglNatives = "natives-linux"
 
 dependencies{
+
+    api("org.jetbrains.skija:skija-linux:0.91.2")
 
     implementation("org.json:json:20201115")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
